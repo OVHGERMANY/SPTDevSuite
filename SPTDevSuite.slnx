@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="src/SPTDevSuite.Contracts/SPTDevSuite.Contracts.csproj" />
+  <Project Path="src/SPTDevSuite.Server/SPTDevSuite.Server.csproj" />
+  <Project Path="tests/SPTDevSuite.Tests/SPTDevSuite.Tests.csproj" />
+</Solution>
