@@ -10,16 +10,16 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$expectedArtifacts = @(
+$expectedArtifactIdentities = @(
     [pscustomobject]@{
         Name = 'SPTDevSuite.Contracts.dll'
-        Length = 57344L
-        SHA256 = '4DF38FD718FDB94D126710B95D1DA411DEF1FE023CDB2998A62974ABFD41A4F7'
+        AssemblyName = 'SPTDevSuite.Contracts'
+        Version = '0.2.0.0'
     },
     [pscustomobject]@{
         Name = 'SPTDevSuite.Server.dll'
-        Length = 119808L
-        SHA256 = '82ED0A1A47C3FB924C363D87E0D237687DA94F644FC78A296BE7ECA65ECC1CE0'
+        AssemblyName = 'SPTDevSuite.Server'
+        Version = '0.2.0.0'
     }
 )
 
@@ -159,18 +159,32 @@ if ($null -ne $runningProcesses) {
 
 $candidateEntries = @(Get-ChildItem -LiteralPath $candidateRoot -Force)
 $candidateFiles = @($candidateEntries.Where({ -not $_.PSIsContainer }))
-if ($candidateEntries.Count -ne $expectedArtifacts.Count -or $candidateFiles.Count -ne $expectedArtifacts.Count) {
-    throw "Candidate package contains $($candidateEntries.Count) entries and $($candidateFiles.Count) files; expected exactly $($expectedArtifacts.Count) files and no other entries."
+if ($candidateEntries.Count -ne $expectedArtifactIdentities.Count -or $candidateFiles.Count -ne $expectedArtifactIdentities.Count) {
+    throw "Candidate package contains $($candidateEntries.Count) entries and $($candidateFiles.Count) files; expected exactly $($expectedArtifactIdentities.Count) files and no other entries."
 }
 
-foreach ($artifact in $expectedArtifacts) {
-    $candidatePath = Join-Path $candidateRoot $artifact.Name
+$expectedArtifacts = foreach ($artifactIdentity in $expectedArtifactIdentities) {
+    $candidatePath = Join-Path $candidateRoot $artifactIdentity.Name
+    if (-not (Test-Path -LiteralPath $candidatePath -PathType Leaf)) {
+        throw "Missing expected candidate assembly: $candidatePath"
+    }
+
     $candidateInfo = Get-Item -LiteralPath $candidatePath
+    $candidateAssembly = [System.Reflection.AssemblyName]::GetAssemblyName($candidatePath)
     $candidateHash = (Get-FileHash -LiteralPath $candidatePath -Algorithm SHA256).Hash
-    if ($candidateInfo.Length -ne $artifact.Length -or $candidateHash -ne $artifact.SHA256) {
-        throw "$($artifact.Name) candidate identity mismatch: length $($candidateInfo.Length), SHA-256 $candidateHash."
+    if ($candidateAssembly.Name -ne $artifactIdentity.AssemblyName -or
+        $candidateAssembly.Version.ToString() -ne $artifactIdentity.Version -or
+        -not $candidateInfo.VersionInfo.ProductVersion.StartsWith('0.2.0+', [StringComparison]::Ordinal)) {
+        throw "$($artifactIdentity.Name) candidate identity mismatch: assembly $($candidateAssembly.Name), version $($candidateAssembly.Version), product version $($candidateInfo.VersionInfo.ProductVersion)."
+    }
+
+    [pscustomobject]@{
+        Name = $artifactIdentity.Name
+        Length = $candidateInfo.Length
+        SHA256 = $candidateHash
     }
 }
+$expectedArtifacts = @($expectedArtifacts)
 
 if (Test-Path -LiteralPath $targetRoot) {
     $targetMatches = Test-ArtifactSet -Directory $targetRoot -Artifacts $expectedArtifacts
