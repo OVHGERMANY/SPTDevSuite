@@ -1,6 +1,9 @@
 using SPTDevSuite.Contracts;
 using SPTDevSuite.Server.Planning;
 using SPTDevSuite.Server.Profiles;
+using SPTarkov.Server.Core.Models.Common;
+using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using SPTarkov.Server.Core.Models.Enums;
 
 namespace SPTDevSuite.Tests;
 
@@ -66,6 +69,46 @@ public sealed class ProfileAndPlannerTests
         var module = Assert.Single(plan.Modules);
         Assert.True(module.Dangerous);
         Assert.NotEmpty(module.Warnings);
+    }
+
+    [Fact]
+    public void QuestCompletionMarksTrackedAndMissingTemplateQuestsSuccessfulWithoutDuplicatingExistingRecords()
+    {
+        var completedId = new MongoId("5936d90786f7742b1420ba5b");
+        var pendingId = new MongoId("5936da9e86f7742d65037edf");
+        var missingId = new MongoId("59674cd986f7744ab26e32f2");
+        var quests = new List<QuestStatus>
+        {
+            new()
+            {
+                QId = completedId,
+                StartTime = 10,
+                Status = QuestStatusEnum.Success,
+                StatusTimers = new Dictionary<QuestStatusEnum, double> { [QuestStatusEnum.Success] = 20 },
+                CompletedConditions = [],
+            },
+            new()
+            {
+                QId = pendingId,
+                StartTime = 30,
+                Status = QuestStatusEnum.AvailableForFinish,
+                StatusTimers = new Dictionary<QuestStatusEnum, double> { [QuestStatusEnum.AvailableForFinish] = 40 },
+                CompletedConditions = [],
+                AvailableAfter = 99,
+            },
+        };
+
+        var changes = QuestCompletionPolicy.Apply(quests, [completedId, pendingId, missingId], 1234);
+
+        Assert.Equal(2, changes);
+        Assert.Equal(3, quests.Count);
+        var pending = Assert.Single(quests, quest => quest.QId == pendingId);
+        Assert.Equal(QuestStatusEnum.Success, pending.Status);
+        Assert.Equal(1234, pending.StatusTimers[QuestStatusEnum.Success]);
+        Assert.Null(pending.AvailableAfter);
+        var added = Assert.Single(quests, quest => quest.QId == missingId);
+        Assert.Equal(QuestStatusEnum.Success, added.Status);
+        Assert.Equal(1234, added.StatusTimers[QuestStatusEnum.Success]);
     }
 
     private static UnlockPlanningContext Context() => new(

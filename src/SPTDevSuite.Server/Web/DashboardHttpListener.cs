@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Servers.Http;
@@ -15,9 +16,13 @@ public sealed class DashboardHttpListener(
     DashboardSessionSecurity security,
     FoundationState foundationState,
     ItemCatalogService catalog,
-    SptProfileOverviewService profiles) : IHttpListener
+    SptProfileOverviewService profiles,
+    UnlockOperationService unlocks) : IHttpListener
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     public bool CanHandle(HttpContext context) =>
         context.Request.Path.StartsWithSegments(DevSuiteConstants.RoutePrefix, StringComparison.OrdinalIgnoreCase);
@@ -48,6 +53,13 @@ public sealed class DashboardHttpListener(
         var sessionToken = context.Request.Cookies[DashboardSessionSecurity.SessionCookieName];
         if (!HttpMethods.IsGet(context.Request.Method))
         {
+            if (!foundationState.WriteCapabilitiesAvailable)
+            {
+                await WriteTextAsync(context, StatusCodes.Status503ServiceUnavailable,
+                    foundationState.Compatibility.Message, cancellationToken);
+                return;
+            }
+
             var decision = security.ValidateStateChange(
                 remoteAddress,
                 sessionToken,
@@ -59,8 +71,15 @@ public sealed class DashboardHttpListener(
                 return;
             }
 
+            if (string.Equals(path, "/devsuite/api/unlocks", StringComparison.OrdinalIgnoreCase)
+                && HttpMethods.IsPost(context.Request.Method))
+            {
+                await HandleUnlocksAsync(sessionId, context, cancellationToken);
+                return;
+            }
+
             await WriteTextAsync(context, StatusCodes.Status405MethodNotAllowed,
-                "No state-changing endpoint exists in this foundation milestone.", cancellationToken);
+                "Method not allowed.", cancellationToken);
             return;
         }
 
@@ -84,7 +103,7 @@ public sealed class DashboardHttpListener(
                 await WriteJsonAsync(context, new
                 {
                     name = "SPTDevSuite",
-                    version = "0.1.0",
+                    version = DevSuiteConstants.ModVersion,
                     compatibility = foundationState.Compatibility,
                     itemIndexReady = foundationState.ItemIndexReady,
                     indexedItems = catalog.Count,
@@ -103,7 +122,7 @@ public sealed class DashboardHttpListener(
                     DevSuiteConstants.RoutePrefix,
                     true,
                     false,
-                    false,
+                    true,
                     DevSuiteConstants.MaximumPageSize), cancellationToken);
                 break;
             default:
@@ -143,6 +162,46 @@ public sealed class DashboardHttpListener(
         {
             await WriteTextAsync(context, StatusCodes.Status404NotFound,
                 "No PMC profile exists for the current session.", cancellationToken);
+        }
+    }
+
+    private async Task HandleUnlocksAsync(MongoId sessionId, HttpContext context, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = await JsonSerializer.DeserializeAsync<UnlockOperationRequest>(
+                context.Request.Body, JsonOptions, cancellationToken);
+            if (request is null)
+            {
+                await WriteTextAsync(context, StatusCodes.Status400BadRequest, "Unlock request body is required.", cancellationToken);
+                return;
+            }
+
+            var result = await unlocks.ExecuteAsync(sessionId, request, cancellationToken);
+            await WriteJsonAsync(context, result, cancellationToken);
+        }
+        catch (JsonException)
+        {
+            await WriteTextAsync(context, StatusCodes.Status400BadRequest, "Unlock request JSON is invalid.", cancellationToken);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            await WriteTextAsync(context, StatusCodes.Status401Unauthorized,
+                "A valid SPT profile session is required.", cancellationToken);
+        }
+        catch (KeyNotFoundException)
+        {
+            await WriteTextAsync(context, StatusCodes.Status404NotFound,
+                "No PMC profile exists for the current session.", cancellationToken);
+        }
+        catch (SptCompatibilityException exception)
+        {
+            await WriteTextAsync(context, StatusCodes.Status503ServiceUnavailable,
+                exception.Message, cancellationToken);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await WriteTextAsync(context, StatusCodes.Status400BadRequest, exception.Message, cancellationToken);
         }
     }
 

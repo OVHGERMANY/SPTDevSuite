@@ -1,6 +1,6 @@
 # SPTDevSuite operating rules
 
-- Target only SPT 4.1.2 and .NET 10. Fail closed for every other server version.
+- Target only official SPT 4.1.3 and .NET 10. Fail closed for every other server version.
 - Keep the installed SPT runtime read-only during development and validation.
 - Never read or write installed profile files directly. Runtime profile reads use supported in-memory SPT services.
 - Do not add profile mutation routes without a backup, validation, dry-run, audit, and rollback design approved in the active execution plan.

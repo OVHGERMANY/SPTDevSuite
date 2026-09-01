@@ -13,13 +13,14 @@ public sealed class CompatibilityTests
 
         Assert.True(result.IsCompatible);
         Assert.Contains("OK", result.Message, StringComparison.Ordinal);
-        Assert.True(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.2")));
-        Assert.False(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.3")));
+        Assert.Equal(DevSuiteConstants.ModVersion, metadata.Version.ToString());
+        Assert.True(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.3")));
+        Assert.False(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.2")));
     }
 
     [Theory]
-    [InlineData("4.1.1")]
-    [InlineData("4.1.3")]
+    [InlineData("4.1.2")]
+    [InlineData("4.1.4")]
     [InlineData("4.2.0")]
     [InlineData(null)]
     public void EveryOtherSptVersionIsRejected(string? actual)

@@ -14,7 +14,7 @@ public sealed record ModMetadata : IModMetadata
     public string Name { get; init; } = "SPTDevSuite";
     public string Author { get; init; } = "jbnel";
     public List<string>? Contributors { get; init; }
-    public SemanticVersioning.Version Version { get; init; } = new("0.1.0");
+    public SemanticVersioning.Version Version { get; init; } = new(DevSuiteConstants.ModVersion);
     public SemanticVersioning.Range SptVersion { get; init; } = new(DevSuiteConstants.RequiredSptVersion);
     public bool HasPrepatcher { get; init; }
     public List<string>? Incompatibilities { get; init; }
@@ -35,6 +35,8 @@ public static class CompatibilityPolicy
     }
 }
 
+public sealed class SptCompatibilityException(string message) : InvalidOperationException(message);
+
 [Injectable(InjectionType.Singleton)]
 public sealed class FoundationState
 {
@@ -45,7 +47,15 @@ public sealed class FoundationState
 
     public bool ItemIndexReady { get; private set; }
 
-    public bool WriteCapabilitiesAvailable => false;
+    public bool WriteCapabilitiesAvailable => Compatibility.IsCompatible;
+
+    public void EnsureWriteCapabilitiesAvailable()
+    {
+        if (!WriteCapabilitiesAvailable)
+        {
+            throw new SptCompatibilityException(Compatibility.Message);
+        }
+    }
 
     public void SetCompatibility(CompatibilityResult result)
     {

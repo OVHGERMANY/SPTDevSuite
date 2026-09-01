@@ -18,4 +18,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\SPTDevSuite.Server\SPTDevSuite.Server.csproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(SptServerAssemblyRoot)' != ''">
+    <Reference Include="SemanticVersioning" HintPath="$(SptServerAssemblyRoot)\SemanticVersioning.dll" Private="true" />
+    <Reference Include="SPTarkov.Common" HintPath="$(SptServerAssemblyRoot)\SPTarkov.Common.dll" Private="true" />
+    <Reference Include="SPTarkov.Server.Core" HintPath="$(SptServerAssemblyRoot)\SPTarkov.Server.Core.dll" Private="true" />
+  </ItemGroup>
 </Project>

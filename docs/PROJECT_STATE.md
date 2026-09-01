@@ -1,13 +1,20 @@
 # Project state
 
-Foundation milestone: implemented and validated on 2026-08-20.
+Foundation milestone: implemented on 2026-08-20. Exact official SPT 4.1.3 migration: source-validated on 2026-09-01.
 
-- Compatibility: exact SPT 4.1.2, checked by metadata, server binary reference, and startup policy.
-- Runtime changes: none to SPT databases or profiles.
-- Functional pages: Overview, Items, Profile, Settings.
-- Deferred pages: Unlocks, Traders, Quests, Skills, Hideout, Raids, Backups.
+- Compatibility: exact official SPT 4.1.3 on .NET 10, checked by metadata, `SPTarkov.*` assembly identities `4.1.3.0`, and fail-closed startup, HTTP write-routing, and unlock-service policies.
+- Release metadata: SPTDevSuite 0.2.0.
+- Build dependencies: exact `SPTushonka.Common`, `SPTushonka.DI`, and `SPTushonka.Server.Core` NuGet packages 4.1.3. Assemblies and namespaces remain `SPTarkov.*`.
+- Runtime changes during migration validation: none. No server, database, or profile was started, opened, or modified.
+- Functional pages: Overview, Items, Profile, Unlocks, Settings.
+- Deferred pages: Traders, Quests, Skills, Hideout, Raids, Backups. Quest completion is available only as the separately confirmed `CompleteQuests` unlock module.
 - Item source: immutable bounded index built once from `TemplateTable.Items` after database load.
 - Profile source: supported in-memory `ProfileHelper.GetPmcProfile(sessionId)` projection.
-- Backups: interface and atomic synthetic-file implementation, test-only in this milestone.
-- Writes: no HTTP write endpoint and no startup profile mutation.
-- Validation: 26/26 Release tests passed; build completed with 0 warnings and 0 errors.
+- Unlock safety: loopback token, anti-CSRF, preview-first requests, exact confirmation text, clone validation, profile-data rollback payload, supported save service, and redacted audit records.
+- Validation: 33/33 synthetic Release tests passed against `SPT.Server/4.1.3-RELEASE+ddce41c.20260820`; build completed with 0 warnings and 0 errors. Regression coverage verifies the dashboard reports the declared mod version and rejects POST, PUT, PATCH, and DELETE plus direct unlock-service calls before profile dependencies are accessed on an incompatible runtime.
+
+## Acceptance boundary
+
+- The install-ready package contains exactly `SPTDevSuite.Server.dll` and `SPTDevSuite.Contracts.dll`; no client DLL or third-party assembly is packaged.
+- No 4.1.3 deployment or live runtime acceptance was performed. Installation and profile operations require separate approval and user-led verification.
+- The earlier EFT 46777 port evidence is historical and is not compatibility evidence for this official 4.1.3 package.

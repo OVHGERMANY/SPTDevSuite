@@ -2,7 +2,8 @@ namespace SPTDevSuite.Contracts;
 
 public static class DevSuiteConstants
 {
-    public const string RequiredSptVersion = "4.1.2";
+    public const string ModVersion = "0.2.0";
+    public const string RequiredSptVersion = "4.1.3";
     public const string RoutePrefix = "/devsuite";
     public const int DefaultPageSize = 50;
     public const int MaximumPageSize = 200;
@@ -113,6 +114,18 @@ public sealed record UnlockPlanningContext(
 public sealed record UnlockModulePlan(UnlockModule Module, int PlannedChanges, bool Dangerous, IReadOnlyList<string> Warnings);
 
 public sealed record UnlockPlan(IReadOnlyList<UnlockModulePlan> Modules, int TotalPlannedChanges, IReadOnlyList<string> Warnings);
+
+public sealed record UnlockOperationRequest(IReadOnlyList<UnlockModule> Modules, bool Apply, string? Confirmation);
+
+public sealed record UnlockOperationResult(
+    Guid OperationId,
+    bool Applied,
+    int PlannedChanges,
+    int AppliedChanges,
+    string? BackupKey,
+    string? BackupSha256,
+    IReadOnlyList<UnlockModule> Modules,
+    IReadOnlyList<string> Warnings);
 
 public sealed record BackupValidation(
     string BackupPath,
