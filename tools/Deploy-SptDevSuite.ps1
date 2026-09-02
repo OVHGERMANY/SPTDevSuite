@@ -174,7 +174,7 @@ $expectedArtifacts = foreach ($artifactIdentity in $expectedArtifactIdentities) 
     $candidateHash = (Get-FileHash -LiteralPath $candidatePath -Algorithm SHA256).Hash
     if ($candidateAssembly.Name -ne $artifactIdentity.AssemblyName -or
         $candidateAssembly.Version.ToString() -ne $artifactIdentity.Version -or
-        -not $candidateInfo.VersionInfo.ProductVersion.StartsWith('0.2.0+', [StringComparison]::Ordinal)) {
+        -not [string]::Equals($candidateInfo.VersionInfo.ProductVersion, '0.2.0', [StringComparison]::Ordinal)) {
         throw "$($artifactIdentity.Name) candidate identity mismatch: assembly $($candidateAssembly.Name), version $($candidateAssembly.Version), product version $($candidateInfo.VersionInfo.ProductVersion)."
     }
 

@@ -20,7 +20,7 @@ public sealed record ModMetadata : IModMetadata
     public List<string>? Incompatibilities { get; init; }
     public Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
     public string? Url { get; init; }
-    public string License { get; init; } = "Private";
+    public string License { get; init; } = "All Rights Reserved";
 }
 public static class CompatibilityPolicy
 {

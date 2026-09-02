@@ -14,6 +14,7 @@ public sealed class CompatibilityTests
         Assert.True(result.IsCompatible);
         Assert.Contains("OK", result.Message, StringComparison.Ordinal);
         Assert.Equal(DevSuiteConstants.ModVersion, metadata.Version.ToString());
+        Assert.Equal("All Rights Reserved", metadata.License);
         Assert.True(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.3")));
         Assert.False(metadata.SptVersion.IsSatisfied(new SemanticVersioning.Version("4.1.2")));
     }
