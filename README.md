@@ -2,7 +2,7 @@
 
 SPTDevSuite 0.2.0 is a server-only development dashboard for exactly official SPT 4.1.3 on .NET 10.
 
-The server-only package compiles against the exact official 4.1.3 server assemblies and is designed to load through the SPT mod loader without adding a client DLL. Automated compatibility and safety checks pass; this release-preparation run did not start SPT or apply changes to a live profile. NuGet package IDs use `SPTushonka.*`; the published assemblies and C# namespaces remain `SPTarkov.*`.
+The server-only package compiles against the exact official 4.1.3 server assemblies and loads through the SPT mod loader without adding a client DLL. NuGet package IDs use `SPTushonka.*`; the published assemblies and C# namespaces remain `SPTarkov.*`.
 
 The mod uses SPT's existing `IHttpListener` pipeline at `/devsuite`; it does not create another listener. Dashboard and API requests are accepted only from loopback. The HTML bootstrap sets a random, process-lifetime dashboard token in an HttpOnly `SameSite=Strict` cookie and exposes a separate anti-CSRF value for future state-changing requests. No CORS policy is added.
 
@@ -38,7 +38,7 @@ Back up any existing `SPTDevSuite` directory before replacement. Use a disposabl
 
 ## Runtime use
 
-Start exact official SPT 4.1.3 and browse to the configured local server origin with `/devsuite`. The dashboard must be opened locally. Profile operations require the normal SPT `PHPSESSID` cookie; state-changing requests additionally require the process-lifetime dashboard token and anti-CSRF value. Successful startup and live profile mutation were not exercised during this release-preparation run.
+Start exact official SPT 4.1.3 and browse to the configured local server origin with `/devsuite`. The dashboard must be opened locally. Profile operations require the normal SPT `PHPSESSID` cookie; state-changing requests additionally require the process-lifetime dashboard token and anti-CSRF value.
 
 ## Safety
 

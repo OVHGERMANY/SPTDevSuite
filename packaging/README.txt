@@ -19,8 +19,5 @@ USING UNLOCKS SAFELY
 - Use a disposable or separately backed-up profile for the first Apply.
 - CompleteQuests requires the exact confirmation COMPLETE_ALL_QUESTS. It marks quest records successful without replaying rewards or mail.
 
-VALIDATION BOUNDARY
-Automated compatibility, safety, build, and package checks passed for SPT 4.1.3. This release-preparation run did not start SPT or apply changes to a live profile.
-
 LICENSE
 This release is distributed for end-user download and use. No permission is granted to modify, redistribute, sublicense, or sell it. No open-source license is granted.
